@@ -44,6 +44,7 @@ func (bs BookStatus) String() string {
 type Collection[T Item] struct {
 	items map[string]T
 }
+
 type Item interface {
 	GetID() string
 	GetTitle() string
