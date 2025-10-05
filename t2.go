@@ -168,3 +168,13 @@ func RemoveUser(users map[string]Users, id string) {
 }
 
 // سیستم امانت
+func (l * BookList) CheckoutBook (name string) {
+	check := FindBookByName(*l, name)
+
+	if check != -1 { 
+		target :=
+
+	}else{ 
+		return fmt.Println("کتاب یات نشد")
+	}
+}
