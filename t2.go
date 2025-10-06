@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -196,5 +197,37 @@ func (l *Library) CheckoutBook(userID, bookName string) {
 
 	book.Status = CheckedOut
 	user.Borrowed = append(user.Borrowed, book.ID)
+
+}
+
+// برگشت کتاب
+func (l *Library) ReturnBook(userID, bookName string) {
+	user, ok := l.Users[userID]
+	if !ok {
+		fmt.Println("User id not found ")
+		return
+	}
+	idx := l.FindBookByName(bookName)
+	if idx == -1 {
+		fmt.Println(" not found book")
+		return
+	}
+
+	book := &l.Books[idx]
+
+}
+
+//  جستجوی کتاب بر اساس عنوان
+
+func (l *Library) FindBookBySubject(subject string) []BookList {
+	var result []BookList
+
+	for _, book := range l.Books {
+		if strings.ToLower(book.Subject) == strings.ToLower(subject) {
+			result = append(result, book)
+		}
+
+	}
+	return result
 
 }
