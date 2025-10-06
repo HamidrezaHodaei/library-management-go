@@ -152,6 +152,7 @@ type Users struct {
 	Email     string
 	UserName  string
 	CreatedAt time.Time
+	Borrowed  []string
 }
 
 func AddUser(users map[string]Users, name, id, email, username string) {
@@ -168,13 +169,32 @@ func RemoveUser(users map[string]Users, id string) {
 }
 
 // سیستم امانت
-func (l * BookList) CheckoutBook (name string) {
-	check := FindBookByName(*l, name)
 
-	if check != -1 { 
-		target :=
-
-	}else{ 
-		return fmt.Println("کتاب یات نشد")
+func (l *Library) CheckoutBook(userID, bookName string) {
+	user, ok := l.Users[userID]
+	if !ok {
+		fmt.Println("User id not found ")
+		return
 	}
+
+	if len(user.Borrowed) >= 5 {
+		fmt.Println("")
+		return
+	}
+
+	idx := l.FindBookByName(bookName)
+	if idx == -1 {
+		fmt.Println(" not found book")
+		return
+	}
+
+	book := &l.Books[idx]
+	if book.Status != Available {
+		fmt.Println("Not Available")
+		return
+	}
+
+	book.Status = CheckedOut
+	user.Borrowed = append(user.Borrowed, book.ID)
+
 }
