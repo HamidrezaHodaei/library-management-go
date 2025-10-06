@@ -231,3 +231,26 @@ func (l *Library) FindBookBySubject(subject string) []BookList {
 	return result
 
 }
+
+// یافتن کتاب‌های امانت گرفته شده توسط یک کاربر خاص
+
+func (l *Library) FindBorrowedBooksByUser(userID string) {
+	var result []BookList
+
+	user, ok := l.Users[userID]
+
+	if !ok {
+		fmt.Println("User not found")
+
+	}
+
+	for _, borrowedID := range user.Borrowed {
+		for _, book := range l.Books {
+			if book.ID == borrowedID {
+				result = append(result, book)
+				break
+			}
+		}
+	}
+	return result
+}
