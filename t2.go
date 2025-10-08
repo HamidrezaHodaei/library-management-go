@@ -153,9 +153,9 @@ func (c *Collection[T]) Add(item T) {
 }
 
 // FindBookBy
-func FindBookByName(l Library, Name string) int {
-	for i, Book := range l.Books {
-		if Book.Name == Name {
+func (l *Library) FindBookByName(name string) int {
+	for i, book := range l.Books {
+		if book.Name == name {
 			return i
 		}
 	}
@@ -180,7 +180,7 @@ func FindBookByISBN(l Library, isbn int) int {
 }
 
 func (l *Library) UpdateBook(oldName string, uName string, uSubject string, uISBN int, uAuthor string, uYear int) bool {
-	idx := FindBookByName(*l, oldName)
+	idx := l.FindBookByName(oldName)
 	if idx != -1 {
 		l.Books[idx].Name = uName
 		l.Books[idx].Subject = uSubject
