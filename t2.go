@@ -41,7 +41,6 @@ func (bs BookStatus) String() string {
 		return "Unknown"
 	}
 }
-
 // type Collection[T Item] struct {
 
 type Collection[T Item] struct {
