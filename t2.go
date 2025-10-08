@@ -6,6 +6,54 @@ import (
 	"time"
 )
 
+// main tests
+
+func main() {
+
+	lib := Library{
+		Name:  "My Library",
+		Books: []BookList{},
+		Users: make(map[string]*Users),
+	}
+
+	lib.AddBook(BookList{
+		Name:    "ابله",
+		Author:  "داستاداستایفسکی",
+		Subject: "ادبیات روسیه",
+		ISBN:    12345,
+		ID:      "B001",
+		Year:    1869,
+		Status:  Available,
+	})
+	lib.AddBook(BookList{
+		Name:    "بیگانه",
+		Author:  "آلبر کامو",
+		Subject: "ادبیات فرانسه",
+		ISBN:    67890,
+		ID:      "B002",
+		Year:    1942,
+		Status:  Available,
+	})
+	AddUser(lib.Users, "Alice", "U001", "alice@example.com", "alice123")
+	AddUser(lib.Users, "Bob", "U002", "bob@example.com", "bob456")
+
+	fmt.Println("All Books:")
+	for _, b := range lib.Books {
+		fmt.Println(b.GetBookInfo())
+	}
+	fmt.Println("\nAlice checks out 'ابله':")
+	lib.CheckoutBook("U001", "ابله")
+	for _, b := range lib.FindBorrowedBooksByUser("U001") {
+		fmt.Println(b.GetBookInfo())
+	}
+
+	fmt.Println("\nAlice returns 'ابله':")
+	lib.ReturnBook("U001", "ابله")
+	for _, b := range lib.FindBorrowedBooksByUser("U001") {
+		fmt.Println(b.GetBookInfo())
+	}
+}
+
 // Book
 type BookList struct {
 	Name    string
@@ -41,6 +89,7 @@ func (bs BookStatus) String() string {
 		return "Unknown"
 	}
 }
+
 // type Collection[T Item] struct {
 
 type Collection[T Item] struct {
@@ -158,8 +207,8 @@ type Users struct {
 	Borrowed  []string
 }
 
-func AddUser(users map[string]Users, name, id, email, username string) {
-	users[id] = Users{
+func AddUser(users map[string]*Users, name, id, email, username string) {
+	users[id] = &Users{
 		ID:        id,
 		Name:      name,
 		Email:     email,
@@ -167,7 +216,8 @@ func AddUser(users map[string]Users, name, id, email, username string) {
 		CreatedAt: time.Now(),
 	}
 }
-func RemoveUser(users map[string]Users, id string) {
+
+func RemoveUser(users map[string]*Users, id string) {
 	delete(users, id)
 }
 
@@ -206,17 +256,25 @@ func (l *Library) CheckoutBook(userID, bookName string) {
 func (l *Library) ReturnBook(userID, bookName string) {
 	user, ok := l.Users[userID]
 	if !ok {
-		fmt.Println("User id not found ")
+		fmt.Println("User id not found")
 		return
 	}
+
 	idx := l.FindBookByName(bookName)
 	if idx == -1 {
-		fmt.Println(" not found book")
+		fmt.Println("Book not found")
 		return
 	}
 
 	book := &l.Books[idx]
+	book.Status = Available
 
+	for i, id := range user.Borrowed {
+		if id == book.ID {
+			user.Borrowed = append(user.Borrowed[:i], user.Borrowed[i+1:]...)
+			break
+		}
+	}
 }
 
 // FindBookBySubject
@@ -259,15 +317,12 @@ func (l *Library) FindBorrowedBooksByUser(userID string) []BookList {
 
 func (l *Library) SortBookByAuthor(author string) []BookList {
 	var result []BookList
-
 	for _, book := range l.Books {
-		if strings.ToLower(book.Subject) == strings.ToLower(subject) {
+		if strings.ToLower(book.Author) == strings.ToLower(author) {
 			result = append(result, book)
 		}
-
 	}
 	return result
-
 }
 
 // Filter books by Year
