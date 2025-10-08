@@ -6,17 +6,18 @@ import (
 	"time"
 )
 
-// کتاب
+// Book
 type BookList struct {
 	Name    string
 	Subject string
 	ISBN    int
 	Author  string
 	ID      string
+	Year    int
 	Status  BookStatus
 }
 
-// وضعیت کتاب
+// BookStatus
 type BookStatus int
 
 const (
@@ -41,15 +42,16 @@ func (bs BookStatus) String() string {
 	}
 }
 
-// ارتباط
+// type Collection[T Item] struct {
+
 type Collection[T Item] struct {
 	items map[string]T
 }
 
 type Item interface {
-	GetID() string
-	GetTitle() string
-	GetInfo() string
+	GetBookID() string
+	GetBookTitle() string
+	GetBookInfo() string
 }
 
 func (b *BookList) GetBookID() string {
@@ -65,7 +67,7 @@ func (b *BookList) GetBookInfo() string {
 		b.Name, b.Author, b.Subject, b.ISBN, b.Status)
 }
 
-// ارتباط یوزر
+// UsersList
 type UsersList[T Members] struct {
 	Members map[string]T
 }
@@ -102,7 +104,7 @@ func (c *Collection[T]) Add(item T) {
 	c.items[item.GetBookID()] = item // eleman be map
 }
 
-// جستجوی کتاب بر اساس عنوان، نویسنده، یا شابک
+// FindBookBy
 func FindBookByName(l Library, Name string) int {
 	for i, Book := range l.Books {
 		if Book.Name == Name {
@@ -129,13 +131,14 @@ func FindBookByISBN(l Library, isbn int) int {
 	return -1
 }
 
-func (l *Library) UpdateBook(oldName string, uName string, uSubject string, uISBN int, uAuthor string) bool {
+func (l *Library) UpdateBook(oldName string, uName string, uSubject string, uISBN int, uAuthor string, uYear int) bool {
 	idx := FindBookByName(*l, oldName)
 	if idx != -1 {
 		l.Books[idx].Name = uName
 		l.Books[idx].Subject = uSubject
 		l.Books[idx].ISBN = uISBN
 		l.Books[idx].Author = uAuthor
+		l.Books[idx].Year = uYear
 		return true
 	}
 	return false
@@ -169,7 +172,7 @@ func RemoveUser(users map[string]Users, id string) {
 	delete(users, id)
 }
 
-// سیستم امانت
+// check out
 
 func (l *Library) CheckoutBook(userID, bookName string) {
 	user, ok := l.Users[userID]
@@ -200,7 +203,7 @@ func (l *Library) CheckoutBook(userID, bookName string) {
 
 }
 
-// برگشت کتاب
+// ReturnBook
 func (l *Library) ReturnBook(userID, bookName string) {
 	user, ok := l.Users[userID]
 	if !ok {
@@ -217,7 +220,7 @@ func (l *Library) ReturnBook(userID, bookName string) {
 
 }
 
-//  جستجوی کتاب بر اساس عنوان
+// FindBookBySubject
 
 func (l *Library) FindBookBySubject(subject string) []BookList {
 	var result []BookList
@@ -232,16 +235,14 @@ func (l *Library) FindBookBySubject(subject string) []BookList {
 
 }
 
-// یافتن کتاب‌های امانت گرفته شده توسط یک کاربر خاص
-
-func (l *Library) FindBorrowedBooksByUser(userID string) {
+// FindBorrowedBooksByUser
+func (l *Library) FindBorrowedBooksByUser(userID string) []BookList {
 	var result []BookList
 
 	user, ok := l.Users[userID]
-
 	if !ok {
 		fmt.Println("User not found")
-
+		return result
 	}
 
 	for _, borrowedID := range user.Borrowed {
@@ -250,6 +251,46 @@ func (l *Library) FindBorrowedBooksByUser(userID string) {
 				result = append(result, book)
 				break
 			}
+		}
+	}
+	return result
+}
+
+//Filter books by author
+
+func (l *Library) SortBookByAuthor(author string) []BookList {
+	var result []BookList
+
+	for _, book := range l.Books {
+		if strings.ToLower(book.Subject) == strings.ToLower(subject) {
+			result = append(result, book)
+		}
+
+	}
+	return result
+
+}
+
+// Filter books by Year
+func (l *Library) SortBookByYear(year int) []BookList {
+	var result []BookList
+
+	for _, book := range l.Books {
+		if book.Year == year {
+			result = append(result, book)
+		}
+	}
+	return result
+}
+
+// Filter books by Books Status
+
+func (l *Library) SortBookByStatus(status string) []BookList {
+	var result []BookList
+
+	for _, book := range l.Books {
+		if book.Status.String() == status {
+			result = append(result, book)
 		}
 	}
 	return result
