@@ -8,7 +8,6 @@ import (
 )
 
 // main tests
-// main tests
 
 func main() {
 
@@ -95,7 +94,8 @@ func (bs BookStatus) String() string {
 // type Collection[T Item] struct {
 
 type Collection[T Item] struct {
-	items map[string]T
+	items   map[string]T
+	counter int
 }
 
 type Item interface {
@@ -160,11 +160,28 @@ type Library struct {
 	Users map[string]*Users
 }
 
-func (l *Library) AddBook(b BookList) {
+var BooksCounter int
+
+func (l *Library) AddBook(b BookList) (string, error) {
+	for _, book := range l.Books {
+		if book.ID == b.ID {
+			return "", errors.New("Book with this ID already exists")
+		}
+	}
+
 	l.Books = append(l.Books, b)
+	BooksCounter++
+	return "Book added successfully", nil
 }
-func (c *Collection[T]) Add(item T) {
-	c.items[item.GetBookID()] = item // eleman be map
+
+func (c *Collection[T]) AddBook(item T) (string, error) {
+	id := item.GetBookID()
+	if _, exists := c.items[id]; exists {
+		return "", errors.New("Book with that name and id already exists")
+	}
+	c.items[id] = item
+	c.counter++
+	return "Books added successfully", nil
 }
 
 // FindBookBy
@@ -231,6 +248,8 @@ type Users struct {
 	Borrowed  []string
 }
 
+var UserCounter int
+
 func AddUser(users map[string]*Users, name, id, email, username string) (string, error) {
 	if _, exists := users[id]; exists {
 		return "", errors.New("User with this ID already exists")
@@ -242,6 +261,7 @@ func AddUser(users map[string]*Users, name, id, email, username string) (string,
 		UserName:  username,
 		CreatedAt: time.Now(),
 	}
+	UserCounter++
 	return "User added successfully", nil
 
 }
@@ -252,7 +272,9 @@ func RemoveUser(users map[string]*Users, id string) (string, error) {
 	}
 
 	delete(users, id)
+	UserCounter--
 	return "User removed successfully", nil
+
 }
 
 // check out
