@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
 
+// main tests
 // main tests
 
 func main() {
@@ -17,18 +19,18 @@ func main() {
 	}
 
 	lib.AddBook(BookList{
-		Name:    "ابله",
-		Author:  "داستاداستایفسکی",
-		Subject: "ادبیات روسیه",
+		Name:    "The Idiot",
+		Author:  "Fyodor Dostoevsky",
+		Subject: "Russian Literature",
 		ISBN:    12345,
 		ID:      "B001",
 		Year:    1869,
 		Status:  Available,
 	})
 	lib.AddBook(BookList{
-		Name:    "بیگانه",
-		Author:  "آلبر کامو",
-		Subject: "ادبیات فرانسه",
+		Name:    "The Stranger",
+		Author:  "Albert Camus",
+		Subject: "French Literature",
 		ISBN:    67890,
 		ID:      "B002",
 		Year:    1942,
@@ -41,14 +43,14 @@ func main() {
 	for _, b := range lib.Books {
 		fmt.Println(b.GetBookInfo())
 	}
-	fmt.Println("\nAlice checks out 'ابله':")
-	lib.CheckoutBook("U001", "ابله")
+	fmt.Println("\nAlice checks out 'The Idiot':")
+	lib.CheckoutBook("U001", "The Idiot")
 	for _, b := range lib.FindBorrowedBooksByUser("U001") {
 		fmt.Println(b.GetBookInfo())
 	}
 
-	fmt.Println("\nAlice returns 'ابله':")
-	lib.ReturnBook("U001", "ابله")
+	fmt.Println("\nAlice returns 'The Idiot':")
+	lib.ReturnBook("U001", "The Idiot")
 	for _, b := range lib.FindBorrowedBooksByUser("U001") {
 		fmt.Println(b.GetBookInfo())
 	}
@@ -115,6 +117,19 @@ func (b *BookList) GetBookInfo() string {
 		b.Name, b.Author, b.Subject, b.ISBN, b.Status)
 }
 
+var (
+	ErrBookNotFound = errors.New("Book Not Found !")
+)
+
+func (l *Collection[T]) GetByID(id string) (T, error) {
+	item, exist := l.items[id] //exist boolen
+	if !exist {
+		var zero T // panic etefag nayofte
+		return zero, ErrBookNotFound
+	}
+	return item, nil
+}
+
 // UsersList
 type UsersList[T Members] struct {
 	Members map[string]T
@@ -153,7 +168,16 @@ func (c *Collection[T]) Add(item T) {
 }
 
 // FindBookBy
-func (l *Library) FindBookByName(name string) int {
+func (l *Library) FindBookByName(name string) (int, error) {
+	for i, book := range l.Books {
+		if book.Name == name {
+			return i, nil
+		}
+	}
+	return -1, errors.New("Book not found !")
+}
+
+func (l *Library) FindBookByName2(name string) int {
 	for i, book := range l.Books {
 		if book.Name == name {
 			return i
@@ -162,34 +186,34 @@ func (l *Library) FindBookByName(name string) int {
 	return -1
 }
 
-func FindBookByAuthor(l Library, author string) int {
+func FindBookByAuthor(l Library, author string) (int, error) {
 	for i, Book := range l.Books {
 		if Book.Author == author {
-			return i
+			return i, nil
 		}
 	}
-	return -1
+	return -1, errors.New("No books found for this author")
 }
-func FindBookByISBN(l Library, isbn int) int {
+func FindBookByISBN(l Library, isbn int) (int, error) {
 	for i, Book := range l.Books {
 		if Book.ISBN == isbn {
-			return i
+			return i, nil
 		}
 	}
-	return -1
+	return -1, errors.New("No books found for this ISBN")
 }
 
-func (l *Library) UpdateBook(oldName string, uName string, uSubject string, uISBN int, uAuthor string, uYear int) bool {
-	idx := l.FindBookByName(oldName)
+func (l *Library) UpdateBook(oldName string, uName string, uSubject string, uISBN int, uAuthor string, uYear int) (string, error) {
+	idx := l.FindBookByName2(oldName)
 	if idx != -1 {
 		l.Books[idx].Name = uName
 		l.Books[idx].Subject = uSubject
 		l.Books[idx].ISBN = uISBN
 		l.Books[idx].Author = uAuthor
 		l.Books[idx].Year = uYear
-		return true
+		return "Updated successfully", nil
 	}
-	return false
+	return "", errors.New("Updating book details failed")
 }
 
 func (c *Collection[T]) Remove(id string) {
@@ -207,7 +231,10 @@ type Users struct {
 	Borrowed  []string
 }
 
-func AddUser(users map[string]*Users, name, id, email, username string) {
+func AddUser(users map[string]*Users, name, id, email, username string) (string, error) {
+	if _, exists := users[id]; exists {
+		return "", errors.New("User with this ID already exists")
+	}
 	users[id] = &Users{
 		ID:        id,
 		Name:      name,
@@ -215,66 +242,76 @@ func AddUser(users map[string]*Users, name, id, email, username string) {
 		UserName:  username,
 		CreatedAt: time.Now(),
 	}
+	return "User added successfully", nil
+
 }
 
-func RemoveUser(users map[string]*Users, id string) {
+func RemoveUser(users map[string]*Users, id string) (string, error) {
+	if _, exists := users[id]; !exists {
+		return "", errors.New("User not found")
+	}
+
 	delete(users, id)
+	return "User removed successfully", nil
 }
 
 // check out
 
-func (l *Library) CheckoutBook(userID, bookName string) {
+func (l *Library) CheckoutBook(userID, bookName string) (string, error) {
 	user, ok := l.Users[userID]
 	if !ok {
-		fmt.Println("User id not found ")
-		return
+		return "", errors.New("User id not found")
 	}
 
 	if len(user.Borrowed) >= 5 {
-		fmt.Println("")
-		return
+		return "", errors.New("Can't Barrow more then five ")
 	}
 
-	idx := l.FindBookByName(bookName)
+	idx := l.FindBookByName2(bookName)
 	if idx == -1 {
-		fmt.Println(" not found book")
-		return
+		return "", errors.New("Book not found!")
 	}
 
 	book := &l.Books[idx]
 	if book.Status != Available {
-		fmt.Println("Not Available")
-		return
+
+		return "", errors.New("Book is not available")
 	}
 
 	book.Status = CheckedOut
 	user.Borrowed = append(user.Borrowed, book.ID)
-
+	return "Book borrowed successfully", nil
 }
 
 // ReturnBook
-func (l *Library) ReturnBook(userID, bookName string) {
+func (l *Library) ReturnBook(userID, bookName string) (string, error) {
 	user, ok := l.Users[userID]
 	if !ok {
-		fmt.Println("User id not found")
-		return
+		return "", errors.New("User ID not found")
 	}
 
-	idx := l.FindBookByName(bookName)
+	idx := l.FindBookByName2(bookName)
 	if idx == -1 {
-		fmt.Println("Book not found")
-		return
+		return "", errors.New("Book not found")
 	}
 
 	book := &l.Books[idx]
-	book.Status = Available
 
+	found := false
 	for i, id := range user.Borrowed {
 		if id == book.ID {
 			user.Borrowed = append(user.Borrowed[:i], user.Borrowed[i+1:]...)
+			found = true
 			break
 		}
 	}
+
+	if !found {
+		return "", errors.New("This book was not borrowed by the user")
+	}
+
+	book.Status = Available
+	return "Book returned successfully", nil
 }
 
 // FindBookBySubject
@@ -337,6 +374,7 @@ func (l *Library) SortBookByYear(year int) []BookList {
 	return result
 }
 
+//err
 // Filter books by Books Status
 
 func (l *Library) SortBookByStatus(status string) []BookList {
